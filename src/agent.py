@@ -35,7 +35,6 @@ class TravelAgent:
         print("步骤1: 搜索知识库...")
         knowledge_results = self.knowledge_base.search(
             query=user_input,
-            top_k=self.knowledge_base.collection_name,
             where=filters
         )
         

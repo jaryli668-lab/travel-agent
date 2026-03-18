@@ -1,6 +1,6 @@
 """
 知识库模块 - 使用Chroma向量数据库
-支持多种嵌入方式（sentence-transformers、OpenAI API）
+支持多种嵌入方式（sentence-transformers、千问API、OpenAI API）
 """
 import os
 from typing import List, Dict, Any, Optional
@@ -10,32 +10,51 @@ from chromadb.config import Settings
 from config import Config
 
 
+# 嵌入模型配置
+# 千问嵌入模型
+QIWEN_EMBEDDING_MODEL = os.getenv("QIWEN_EMBEDDING_MODEL", "text-embedding-v3")
+# OpenAI嵌入模型（备选）
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+# 是否启用OpenAI备选
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_ENABLED = bool(OPENAI_API_KEY)
+
 # 尝试导入嵌入模型
 EMBEDDING_MODEL = None
-EMBEDDING_TYPE = None  # 'sentence-transformers', 'openai', or 'none'
+EMBEDDING_TYPE = None  # 'qwen', 'sentence-transformers', 'openai', or 'none'
 
-# 方法1：尝试使用sentence-transformers
-try:
-    from sentence_transformers import SentenceTransformer
-    EMBEDDING_MODEL = SentenceTransformer(Config.EMBEDDING_MODEL)
-    EMBEDDING_TYPE = 'sentence-transformers'
-    print(f"✅ 使用sentence-transformers嵌入模型: {Config.EMBEDDING_MODEL}")
-except ImportError:
-    print("⚠️  sentence-transformers未安装，尝试使用OpenAI嵌入...")
-    
-    # 方法2：使用OpenAI嵌入API
+# 方法1：优先使用千问嵌入API（与千问对话API共用key）
+if Config.QIWEN_API_KEY:
     try:
         from openai import OpenAI
-        if Config.QIWEN_API_KEY:
-            EMBEDDING_MODEL = OpenAI(api_key=Config.QIWEN_API_KEY, base_url=Config.QIWEN_API_BASE)
-            EMBEDDING_TYPE = 'openai'
-            print(f"✅ 使用OpenAI嵌入API（共享千问API Key）")
-        else:
-            print("❌ 未配置API Key，无法使用OpenAI嵌入")
-            EMBEDDING_TYPE = 'none'
+        EMBEDDING_MODEL = OpenAI(api_key=Config.QIWEN_API_KEY, base_url=Config.QIWEN_API_BASE)
+        EMBEDDING_TYPE = 'qwen'
+        print(f"✅ 使用千问嵌入模型: {QIWEN_EMBEDDING_MODEL}")
     except ImportError:
-        print("❌ OpenAI包未安装")
-        EMBEDDING_TYPE = 'none'
+        print("⚠️  OpenAI包未安装，无法使用千问嵌入")
+
+# 方法2：尝试使用sentence-transformers
+if EMBEDDING_TYPE is None:
+    try:
+        from sentence_transformers import SentenceTransformer
+        EMBEDDING_MODEL = SentenceTransformer(Config.EMBEDDING_MODEL)
+        EMBEDDING_TYPE = 'sentence-transformers'
+        print(f"✅ 使用sentence-transformers嵌入模型: {Config.EMBEDDING_MODEL}")
+    except ImportError:
+        print("⚠️  sentence-transformers未安装")
+
+# 方法3：备选使用OpenAI嵌入API
+if EMBEDDING_TYPE is None and OPENAI_ENABLED:
+    try:
+        from openai import OpenAI
+        EMBEDDING_MODEL = OpenAI(api_key=OPENAI_API_KEY)
+        EMBEDDING_TYPE = 'openai'
+        print(f"✅ 使用OpenAI嵌入API（备选）: {OPENAI_EMBEDDING_MODEL}")
+    except ImportError:
+        print("⚠️  OpenAI包未安装")
+
+if EMBEDDING_TYPE is None:
+    print("❌ 未配置可用的嵌入模型")
 
 
 class KnowledgeBase:
@@ -98,24 +117,56 @@ class KnowledgeBase:
     def _generate_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
         生成文本嵌入向量
-        
+
         Args:
             texts: 文本列表
-            
+
         Returns:
             嵌入向量列表
         """
         if self.embedding_type == 'sentence-transformers':
             print(f"使用sentence-transformers为 {len(texts)} 个文本生成嵌入...")
             return self.embedding_model.encode(texts).tolist()
-        
+
+        elif self.embedding_type == 'qwen':
+            print(f"使用千问API为 {len(texts)} 个文本生成嵌入...")
+            embeddings = []
+            for text in texts:
+                try:
+                    response = self.embedding_model.embeddings.create(
+                        model=QIWEN_EMBEDDING_MODEL,
+                        input=text,
+                        dimensions=1024  # 千问text-embedding-v3支持1024维
+                    )
+                    embeddings.append(response.data[0].embedding)
+                except Exception as e:
+                    print(f"千问嵌入API调用失败: {e}")
+                    # 如果配置了OpenAI备选，尝试fallback
+                    if OPENAI_ENABLED:
+                        print("尝试使用OpenAI备选...")
+                        try:
+                            from openai import OpenAI as OpenAIClient
+                            openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
+                            response = openai_client.embeddings.create(
+                                model=OPENAI_EMBEDDING_MODEL,
+                                input=text
+                            )
+                            embeddings.append(response.data[0].embedding)
+                            print("OpenAI备选成功")
+                        except Exception as e2:
+                            print(f"OpenAI备选也失败: {e2}")
+                            raise
+                    else:
+                        raise
+            return embeddings
+
         elif self.embedding_type == 'openai':
             print(f"使用OpenAI API为 {len(texts)} 个文本生成嵌入...")
             embeddings = []
             for text in texts:
                 try:
                     response = self.embedding_model.embeddings.create(
-                        model="text-embedding-ada-002",
+                        model=OPENAI_EMBEDDING_MODEL,
                         input=text
                     )
                     embeddings.append(response.data[0].embedding)
@@ -123,7 +174,7 @@ class KnowledgeBase:
                     print(f"OpenAI嵌入API调用失败: {e}")
                     raise
             return embeddings
-        
+
         else:
             raise ValueError("没有可用的嵌入模型")
         
@@ -171,12 +222,17 @@ class KnowledgeBase:
         # 生成查询嵌入
         query_embedding = self._generate_embeddings([query])[0]
         
+        # 构建查询参数
+        query_params = {
+            "query_embeddings": [query_embedding],
+            "n_results": top_k
+        }
+        # 只有在where不为None时才添加过滤条件
+        if where:
+            query_params["where"] = where
+
         # 搜索向量数据库
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=where
-        )
+        results = self.collection.query(**query_params)
         
         # 格式化结果
         formatted_results = []

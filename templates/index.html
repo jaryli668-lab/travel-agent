@@ -12,94 +12,129 @@
             <h1>🧳 旅行规划Agent</h1>
             <p class="subtitle">基于千问大模型和知识库的智能旅行助手</p>
         </header>
-        
-        <main>
-            <!-- 行程规划表单 -->
-            <section class="card">
-                <h2>🗺️ 行程规划</h2>
-                <form id="plan-form">
-                    <div class="form-group">
-                        <label for="user-input">旅行需求</label>
-                        <textarea 
-                            id="user-input" 
-                            name="user_input" 
-                            rows="4" 
-                            placeholder="例如：5个人去三亚3天，预算每人3000元"
-                            required
-                        ></textarea>
-                    </div>
-                    
-                    <div class="form-row">
+
+        <main class="main-layout">
+            <!-- 左侧：规划区域 -->
+            <div class="main-content">
+                <!-- 行程规划表单 -->
+                <section class="card plan-section">
+                    <h2>🗺️ 行程规划</h2>
+                    <form id="plan-form">
                         <div class="form-group">
-                            <label for="destination">目的地</label>
-                            <input 
-                                type="text" 
-                                id="destination" 
-                                name="destination" 
-                                placeholder="三亚"
-                            >
+                            <label for="user-input">旅行需求</label>
+                            <textarea
+                                id="user-input"
+                                name="user_input"
+                                rows="4"
+                                placeholder="例如：5个人去三亚3天，预算每人3000元"
+                                required
+                            ></textarea>
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="budget-max">最大预算(元)</label>
-                            <input 
-                                type="number" 
-                                id="budget-max" 
-                                name="budget_max" 
-                                placeholder="15000"
-                            >
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="destination">目的地</label>
+                                <input
+                                    type="text"
+                                    id="destination"
+                                    name="destination"
+                                    placeholder="三亚"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="budget-max">最大预算(元)</label>
+                                <input
+                                    type="number"
+                                    id="budget-max"
+                                    name="budget_max"
+                                    placeholder="15000"
+                                >
+                            </div>
                         </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">
-                        <span class="btn-icon">🚀</span>
-                        开始规划
-                    </button>
-                </form>
-                
+
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-icon">🚀</span>
+                            开始规划
+                        </button>
+                    </form>
+                </section>
+
                 <!-- 结果显示区域 -->
-                <div id="plan-result" class="result-area" style="display: none;">
-                    <h3>规划结果</h3>
-                    <div id="plan-content"></div>
-                </div>
-            </section>
-            
-            <!-- 知识库管理 -->
-            <section class="card">
-                <h2>📚 知识库管理</h2>
-                
-                <form id="kb-form">
-                    <div class="form-group">
-                        <label for="knowledge-text">添加知识</label>
-                        <textarea 
-                            id="knowledge-text" 
-                            name="knowledge_text" 
-                            rows="3" 
-                            placeholder="例如：三亚天涯海角下午去，看日落最美"
-                        ></textarea>
+                <section id="plan-result" class="result-section" style="display: none;">
+                    <!-- Tab 导航 -->
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" data-tab="overview">
+                            <span class="tab-icon">📋</span>
+                            行程概览
+                        </button>
+                        <button class="tab-btn" data-tab="itinerary">
+                            <span class="tab-icon">📅</span>
+                            详细路线
+                        </button>
+                        <button class="tab-btn" data-tab="hotels">
+                            <span class="tab-icon">🏨</span>
+                            酒店推荐
+                        </button>
+                        <button class="tab-btn" data-tab="tips">
+                            <span class="tab-icon">💡</span>
+                            实用建议
+                        </button>
+                        <button class="tab-btn" data-tab="knowledge">
+                            <span class="tab-icon">📚</span>
+                            知识库
+                        </button>
                     </div>
-                    
-                    <button type="submit" class="btn btn-secondary">
-                        <span class="btn-icon">➕</span>
-                        添加知识
-                    </button>
-                </form>
-                
-                <!-- 知识库信息 -->
-                <div class="kb-info">
-                    <h3>知识库状态</h3>
-                    <div id="kb-stats">
-                        <p>加载中...</p>
+
+                    <!-- Tab 内容 -->
+                    <div class="tabs-content">
+                        <div id="tab-overview" class="tab-content active"></div>
+                        <div id="tab-itinerary" class="tab-content"></div>
+                        <div id="tab-hotels" class="tab-content"></div>
+                        <div id="tab-tips" class="tab-content"></div>
+                        <div id="tab-knowledge" class="tab-content"></div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
+
+            <!-- 右侧：知识库管理 -->
+            <aside class="sidebar">
+                <section class="card kb-section">
+                    <h2>📚 知识库管理</h2>
+
+                    <form id="kb-form">
+                        <div class="form-group">
+                            <label for="knowledge-text">添加知识</label>
+                            <textarea
+                                id="knowledge-text"
+                                name="knowledge_text"
+                                rows="3"
+                                placeholder="例如：三亚天涯海角下午去，看日落最美"
+                            ></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary">
+                            <span class="btn-icon">➕</span>
+                            添加知识
+                        </button>
+                    </form>
+
+                    <!-- 知识库信息 -->
+                    <div class="kb-info">
+                        <h3>知识库状态</h3>
+                        <div id="kb-stats">
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                </section>
+            </aside>
         </main>
-        
+
         <footer>
             <p>&copy; 2026 旅行规划Agent | 技术支持: 李成军</p>
         </footer>
     </div>
-    
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
