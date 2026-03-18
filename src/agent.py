@@ -2,8 +2,8 @@
 旅行规划Agent主逻辑
 """
 from typing import Dict, Any
-from knowledge_base import KnowledgeBase
-from qiwen_api import QwenClient
+from .knowledge_base import KnowledgeBase
+from .qiwen_api import QwenClient
 
 
 class TravelAgent:
