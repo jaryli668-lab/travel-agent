@@ -2,13 +2,17 @@
 Web界面 - Flask应用
 """
 import os
+import sys
 from flask import Flask, render_template, request, jsonify
-from agent import TravelAgent
+from src.agent import TravelAgent
 from config import Config
 
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# 添加src到Python路径（确保能找到agent模块）
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 # 初始化Agent
 agent = None
