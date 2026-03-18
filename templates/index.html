@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行规划Agent</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧳 旅行规划Agent</h1>
+            <p class="subtitle">基于千问大模型和知识库的智能旅行助手</p>
+        </header>
+        
+        <main>
+            <!-- 行程规划表单 -->
+            <section class="card">
+                <h2>🗺️ 行程规划</h2>
+                <form id="plan-form">
+                    <div class="form-group">
+                        <label for="user-input">旅行需求</label>
+                        <textarea 
+                            id="user-input" 
+                            name="user_input" 
+                            rows="4" 
+                            placeholder="例如：5个人去三亚3天，预算每人3000元"
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="destination">目的地</label>
+                            <input 
+                                type="text" 
+                                id="destination" 
+                                name="destination" 
+                                placeholder="三亚"
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="budget-max">最大预算(元)</label>
+                            <input 
+                                type="number" 
+                                id="budget-max" 
+                                name="budget_max" 
+                                placeholder="15000"
+                            >
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-icon">🚀</span>
+                        开始规划
+                    </button>
+                </form>
+                
+                <!-- 结果显示区域 -->
+                <div id="plan-result" class="result-area" style="display: none;">
+                    <h3>规划结果</h3>
+                    <div id="plan-content"></div>
+                </div>
+            </section>
+            
+            <!-- 知识库管理 -->
+            <section class="card">
+                <h2>📚 知识库管理</h2>
+                
+                <form id="kb-form">
+                    <div class="form-group">
+                        <label for="knowledge-text">添加知识</label>
+                        <textarea 
+                            id="knowledge-text" 
+                            name="knowledge_text" 
+                            rows="3" 
+                            placeholder="例如：三亚天涯海角下午去，看日落最美"
+                        ></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-secondary">
+                        <span class="btn-icon">➕</span>
+                        添加知识
+                    </button>
+                </form>
+                
+                <!-- 知识库信息 -->
+                <div class="kb-info">
+                    <h3>知识库状态</h3>
+                    <div id="kb-stats">
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 旅行规划Agent | 技术支持: 李成军</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
