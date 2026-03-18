@@ -1,6 +1,6 @@
 """
 知识库模块 - 使用Chroma向量数据库
-支持多种嵌入方式（sentence-transformers、OpenAI API）
+支持sentence-transformers和OpenAI嵌入
 """
 import os
 from typing import List, Dict, Any, Optional
@@ -12,9 +12,8 @@ from config import Config
 
 # 尝试导入嵌入模型
 EMBEDDING_MODEL = None
-EMBEDDING_TYPE = None  # 'sentence-transformers', 'openai', or 'none'
+EMBEDDING_TYPE = None  # 'sentence-transformers' or 'openai'
 
-# 方法1：尝试使用sentence-transformers
 try:
     from sentence_transformers import SentenceTransformer
     EMBEDDING_MODEL = SentenceTransformer(Config.EMBEDDING_MODEL)
@@ -22,14 +21,12 @@ try:
     print(f"✅ 使用sentence-transformers嵌入模型: {Config.EMBEDDING_MODEL}")
 except ImportError:
     print("⚠️  sentence-transformers未安装，尝试使用OpenAI嵌入...")
-    
-    # 方法2：使用OpenAI嵌入API
     try:
         from openai import OpenAI
         if Config.QIWEN_API_KEY:
             EMBEDDING_MODEL = OpenAI(api_key=Config.QIWEN_API_KEY, base_url=Config.QIWEN_API_BASE)
             EMBEDDING_TYPE = 'openai'
-            print(f"✅ 使用OpenAI嵌入API（共享千问API Key）")
+            print(f"✅ 使用OpenAI嵌入API")
         else:
             print("❌ 未配置API Key，无法使用OpenAI嵌入")
             EMBEDDING_TYPE = 'none'
@@ -64,12 +61,10 @@ class KnowledgeBase:
             print("❌ 错误：没有可用的嵌入模型！")
             print("=" * 60)
             print("\n请安装以下之一：")
-            print("1. sentence-transformers:")
-            print("   pip install sentence-transformers")
-            print("   参考: INSTALL.md")
-            print("\n2. openai (使用API嵌入):")
-            print("   pip install openai")
-            print("   需要在.env中配置API Key")
+            print("1. sentence-transformers: pip install sentence-transformers")
+            print("   - 参考: INSTALL.md")
+            print("2. openai: pip install openai")
+            print("   - 需要在.env中配置API Key")
             print("=" * 60)
             raise ImportError("没有可用的嵌入模型")
         else:
@@ -113,15 +108,11 @@ class KnowledgeBase:
             print(f"使用OpenAI API为 {len(texts)} 个文本生成嵌入...")
             embeddings = []
             for text in texts:
-                try:
-                    response = self.embedding_model.embeddings.create(
-                        model="text-embedding-ada-002",
-                        input=text
-                    )
-                    embeddings.append(response.data[0].embedding)
-                except Exception as e:
-                    print(f"OpenAI嵌入API调用失败: {e}")
-                    raise
+                response = self.embedding_model.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=text
+                )
+                embeddings.append(response.data[0].embedding)
             return embeddings
         
         else:
